@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<meta name="hexo-config" content="{&quot;hostname&quot;:&quot;example.com&quot;,&quot;root&quot;:&quot;/&quot;,&quot;images&quot;:&quot;/images&quot;,&quot;scheme&quot;:&quot;Muse&quot;,&quot;version&quot;:&quot;8.3.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;left&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:true,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;fadeInDown&quot;,&quot;post_body&quot;:&quot;fadeInDown&quot;,&quot;coll_header&quot;:&quot;fadeInLeft&quot;,&quot;sidebar&quot;:&quot;fadeInUp&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}">
+<meta name="description" content="本章简要概括一下synchronized的使用场景，以及一点点的底层实现原理，第一次写博客希望能得到大家的支持。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized">
+<meta property="og:url" content="http://example.com/2021/04/08/synchronized/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="本章简要概括一下synchronized的使用场景，以及一点点的底层实现原理，第一次写博客希望能得到大家的支持。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-04-08T05:02:43.000Z">
+<meta property="article:modified_time" content="2021-04-08T05:14:22.334Z">
+<meta property="article:author" content="cool">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2021/04/08/synchronized/">
+
+
+
+<meta name="hexo-config-page" content="{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;}">
+<meta name="hexo-config-calendar" content="">
+<title>synchronized | Hexo</title><script data-pjax src="/js/load-config.js"></script>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Hexo</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#synchronized"><span class="nav-number">1.</span> <span class="nav-text">synchronized</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.1.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E5%86%99Runnable%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.1.1.</span> <span class="nav-text">重写Runnable接口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#main%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.2.</span> <span class="nav-text">main方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%9F%E8%AE%A1%E7%BB%93%E6%9E%9C"><span class="nav-number">1.1.3.</span> <span class="nav-text">统计结果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">1.1.4.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E5%86%99Runnable%E6%8E%A5%E5%8F%A3%EF%BC%8C%E5%B9%B6%E5%8A%A0%E5%85%A5synchronized"><span class="nav-number">1.1.5.</span> <span class="nav-text">重写Runnable接口，并加入synchronized</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%8D%E6%AC%A1%E6%89%93%E5%8D%B0%E7%BB%93%E6%9E%9C"><span class="nav-number">1.1.6.</span> <span class="nav-text">再次打印结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">底层实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B0%E5%BB%BA%E7%B1%BB"><span class="nav-number">1.2.1.</span> <span class="nav-text">新建类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9B%E8%BF%87javac%E7%BC%96%E8%AF%91%E5%90%8E"><span class="nav-number">1.2.2.</span> <span class="nav-text">进过javac编译后</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="cool"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">cool</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">1</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/08/synchronized/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="cool">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          synchronized
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-04-08 13:02:43 / 修改时间：13:14:22" itemprop="dateCreated datePublished" datetime="2021-04-08T13:02:43+08:00">2021-04-08</time>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">本章简要概括一下synchronized的使用场景，以及一点点的底层实现原理，第一次写博客希望能得到大家的支持。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="synchronized"><a href="#synchronized" class="headerlink" title="synchronized"></a>synchronized</h1><p><strong>synchronized</strong> 是常用的保证线程同步的方法，我们打算讲述底层原理之前先了解其使用原理，我们就以卖票为例：</p>
+<hr>
+<p>[TOC]</p>
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><blockquote>
+<p>我们先重写Runnable接口，看看在引入synchronized之前多线程执行方式。</p>
+</blockquote>
+<h3 id="重写Runnable接口"><a href="#重写Runnable接口" class="headerlink" title="重写Runnable接口"></a>重写Runnable接口</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public class ShouPiao implements Runnable &#123;</span><br><span class="line">    private <span class="built_in">int</span> count = <span class="number">10</span>;</span><br><span class="line"><span class="meta">    @Override</span></span><br><span class="line">    public void run() &#123;</span><br><span class="line">        <span class="keyword">while</span> (true) &#123;</span><br><span class="line">               <span class="keyword">if</span> (count &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                   <span class="keyword">break</span>;</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">try</span> &#123;</span><br><span class="line">                   Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">               &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                   e.printStackTrace();</span><br><span class="line">               &#125;</span><br><span class="line">               count--;</span><br><span class="line">               System.out.println(<span class="string">&quot;剩余&quot;</span> + count + <span class="string">&quot;张票&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="main方法"><a href="#main方法" class="headerlink" title="main方法"></a>main方法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Runnable shouPiao = new ShouPiao();</span><br><span class="line">        new Thread(shouPiao).start();</span><br><span class="line">        new Thread(shouPiao).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="统计结果"><a href="#统计结果" class="headerlink" title="统计结果"></a>统计结果</h3><table>
+<thead>
+<tr>
+<th align="left">第几次售票</th>
+<th align="right">剩余票数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">第一次</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td align="left">第二次</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td align="left">第三次</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td align="left">第四次</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td align="left">第五次</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td align="left">第六次</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td align="left">第七次</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td align="left">第八次</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td align="left">第九次</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td align="left">第十次</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="left">第十一次</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td align="left">第十二次</td>
+<td align="right">-1</td>
+</tr>
+</tbody></table>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><blockquote>
+<p>这时，我们发现不仅出现了相同票数，还有负数生成，这个时候现场就不是安全的了，此时在业务模块中加入synchronized</p>
+</blockquote>
+<h3 id="重写Runnable接口，并加入synchronized"><a href="#重写Runnable接口，并加入synchronized" class="headerlink" title="重写Runnable接口，并加入synchronized"></a>重写Runnable接口，并加入synchronized</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">public class ShouPiao implements Runnable &#123;</span><br><span class="line">    private <span class="built_in">int</span> count = <span class="number">10</span>;</span><br><span class="line">    Object o =new Object();</span><br><span class="line"><span class="meta">    @Override</span></span><br><span class="line">    public void run() &#123;</span><br><span class="line">        <span class="keyword">while</span> (true) &#123;</span><br><span class="line">            synchronized (o)&#123;</span><br><span class="line">                <span class="keyword">if</span> (count &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">                &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                count--;</span><br><span class="line">                System.out.println(<span class="string">&quot;剩余&quot;</span> + count + <span class="string">&quot;张票&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="再次打印结果"><a href="#再次打印结果" class="headerlink" title="再次打印结果"></a>再次打印结果</h3><table>
+<thead>
+<tr>
+<th align="left">第几次售票</th>
+<th align="right">剩余票数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">第一次</td>
+<td align="right">9</td>
+</tr>
+<tr>
+<td align="left">第二次</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td align="left">第三次</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td align="left">第四次</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td align="left">第五次</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td align="left">第六次</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td align="left">第七次</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td align="left">第八次</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td align="left">第九次</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="left">第十次</td>
+<td align="right">0</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>结论:</strong> 这时的结果就是我们想要的了，说明线程已经是安全的了</p>
+</blockquote>
+<p>[TOC]</p>
+<h2 id="底层实现"><a href="#底层实现" class="headerlink" title="底层实现"></a>底层实现</h2><blockquote>
+<p> 讲述底层之前，建议大家了解一下jvm，java类经过javac编译后形成.class文件，.class文件经过jvm虚拟机编译成字节在运行（这一点目前也不是太清楚，欢迎指正）</p>
+</blockquote>
+<h3 id="新建类"><a href="#新建类" class="headerlink" title="新建类"></a>新建类</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class Test1 &#123;</span><br><span class="line">    public synchronized void test()&#123;</span><br><span class="line">        synchronized (this)&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="进过javac编译后"><a href="#进过javac编译后" class="headerlink" title="进过javac编译后"></a>进过javac编译后</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">  public Test1();</span><br><span class="line">    descriptor: ()V</span><br><span class="line">    flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">1</span>, <span class="built_in">locals</span>=<span class="number">1</span>, args_size=<span class="number">1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: invokespecial <span class="comment">#1                  // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span></span><br><span class="line">         <span class="number">4</span>: <span class="keyword">return</span></span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">1</span>: <span class="number">0</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>       <span class="number">5</span>     <span class="number">0</span>  this   LTest1;</span><br><span class="line"></span><br><span class="line">  public synchronized void test();</span><br><span class="line">    descriptor: ()V</span><br><span class="line">    flags: (<span class="number">0x0021</span>) ACC_PUBLIC, ACC_SYNCHRONIZED</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, <span class="built_in">locals</span>=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: dup</span><br><span class="line">         <span class="number">2</span>: astore_1</span><br><span class="line">         <span class="number">3</span>: monitorenter</span><br><span class="line">         <span class="number">4</span>: aload_1</span><br><span class="line">         <span class="number">5</span>: monitorexit</span><br><span class="line">         <span class="number">6</span>: goto          <span class="number">14</span></span><br><span class="line">         <span class="number">9</span>: astore_2</span><br><span class="line">        <span class="number">10</span>: aload_1</span><br><span class="line">        <span class="number">11</span>: monitorexit</span><br><span class="line">        <span class="number">12</span>: aload_2</span><br><span class="line">        <span class="number">13</span>: athrow</span><br><span class="line">        <span class="number">14</span>: <span class="keyword">return</span></span><br><span class="line">      Exception table:</span><br><span class="line">         <span class="keyword">from</span>    to  target <span class="built_in">type</span></span><br><span class="line">             <span class="number">4</span>     <span class="number">6</span>     <span class="number">9</span>   <span class="built_in">any</span></span><br><span class="line">             <span class="number">9</span>    <span class="number">12</span>     <span class="number">9</span>   <span class="built_in">any</span></span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">3</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">5</span>: <span class="number">4</span></span><br><span class="line">        line <span class="number">6</span>: <span class="number">14</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>      <span class="number">15</span>     <span class="number">0</span>  this   LTest1;</span><br><span class="line">      StackMapTable: number_of_entries = <span class="number">2</span></span><br><span class="line">        frame_type = <span class="number">255</span> /* full_frame */</span><br><span class="line">          offset_delta = <span class="number">9</span></span><br><span class="line">          locals = [ class Test1, class java/lang/Object ]</span><br><span class="line">          stack = [ <span class="class"><span class="keyword">class</span> <span class="title">java</span>/<span class="title">lang</span>/<span class="title">Throwable</span> ]</span></span><br><span class="line">        frame_type = 250 /* chop */</span><br><span class="line">          offset_delta = <span class="number">4</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>底层浅析:</strong> 经过编译之后，我们发现方法头上会出现ACC_SYNCHRONIZED同步方法标识，内部方法块会出现有monitorenter指令和monitorexit指令</p>
+</blockquote>
+<blockquote>
+<p> 其中monitorenter指令指向同步代码块的开始位置，monitorexit指令则指明同步代码块的结束位置，当执行monitorenter指令时，当前线程将试图获取 objectref(即对象锁) 所对应的 monitor 的持有权，当 objectref 的monitor 的进入计数器为 0，那线程可以成功取得 monitor，并将计数器值设置为 1，取锁成功。其他线程不能在争夺资源，使其变为同步操作。</p>
+</blockquote>
+<hr>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+<script src="/js/comments.js"></script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">cool</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
