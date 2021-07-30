@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<meta name="hexo-config" content="{&quot;hostname&quot;:&quot;example.com&quot;,&quot;root&quot;:&quot;/&quot;,&quot;images&quot;:&quot;/images&quot;,&quot;scheme&quot;:&quot;Muse&quot;,&quot;version&quot;:&quot;8.3.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;left&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12},&quot;copycode&quot;:false,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:false,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:&quot;gitalk&quot;,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:true,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;fadeInDown&quot;,&quot;post_body&quot;:&quot;fadeInDown&quot;,&quot;coll_header&quot;:&quot;fadeInLeft&quot;,&quot;sidebar&quot;:&quot;fadeInUp&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;}}">
+<meta name="description" content="本章简要概括一下hashMap的底层实现原理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HashMap">
+<meta property="og:url" content="http://example.com/2021/05/18/HashMap/index.html">
+<meta property="og:site_name" content="cool">
+<meta property="og:description" content="本章简要概括一下hashMap的底层实现原理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-5c3393ae04229968.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-7aca994cc5278eb9.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-a33260a12b0c088a.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-858205447441c834.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-23c167e3ee98a84e.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-24827bc6e9995372.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-858205447441c834.png">
+<meta property="og:image" content="http://example.com/2021/05/18/HashMap/26075772-dca3ff78ca1531ce.png">
+<meta property="article:published_time" content="2021-05-18T07:48:41.000Z">
+<meta property="article:modified_time" content="2021-07-30T06:34:58.355Z">
+<meta property="article:author" content="cool">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/05/18/HashMap/26075772-5c3393ae04229968.png">
+
+
+<link rel="canonical" href="http://example.com/2021/05/18/HashMap/">
+
+
+
+<meta name="hexo-config-page" content="{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;}">
+<meta name="hexo-config-calendar" content="">
+<title>HashMap | cool</title><script data-pjax src="/js/load-config.js"></script>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="cool" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+  <a target="_blank" rel="noopener" href="https://github.com/zengpengfei-alt/cool.github.io.git" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">cool</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar   //日程表 fa-fw"></i>日程表</a></li>
+        <li class="menu-item menu-item-sitemap"><a href="/sitemap" rel="section"><i class="fa fa-sitemap   //站点地图 fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#HashMap"><span class="nav-number">1.</span> <span class="nav-text">HashMap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#hashMap%E7%BB%93%E6%9E%84%E5%9B%BE"><span class="nav-number">1.1.</span> <span class="nav-text">hashMap结构图</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7-hashmap"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.7 hashmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-8%E4%B9%8B%E5%90%8Ehashmap%E8%BF%9B%E8%A1%8C%E4%BA%86%E4%BC%98%E5%8C%96%EF%BC%8C%E9%A6%96%E5%85%88%E5%B0%B1%E6%98%AF%E5%BC%95%E5%85%A5%E4%BA%86%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.8之后hashmap进行了优化，首先就是引入了红黑树</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">1.2.</span> <span class="nav-text">hashMap源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-put%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.7源码分析-put方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-addEntry%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.2.</span> <span class="nav-text">1.7源码分析-addEntry方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-resize%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.3.</span> <span class="nav-text">1.7源码分析-resize方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-put%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.4.</span> <span class="nav-text">1.8源码分析-put方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-resize%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.5.</span> <span class="nav-text">1.8源码分析-resize方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#concurrentHashMap%E7%AE%80%E5%8D%95%E4%BA%86%E8%A7%A3"><span class="nav-number">1.3.</span> <span class="nav-text">concurrentHashMap简单了解</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="cool"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">cool</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zengpengfei-alt/cool.github.io" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zengpengfei-alt&#x2F;cool.github.io" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:13014604575@163.com" title="E-Mail → mailto:13014604575@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="tencent://message/?uin=1145750944" title="qq → tencent:&#x2F;&#x2F;message&#x2F;?uin&#x3D;1145750944" rel="noopener" target="_blank"><i class="fab fa-qq fa-fw"></i>qq</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/6443980026" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;6443980026" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://time.geekbang.org/" title="https:&#x2F;&#x2F;time.geekbang.org&#x2F;" rel="noopener" target="_blank">极客时间</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/18/HashMap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="cool">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="cool">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HashMap
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-05-18 15:48:41" itemprop="dateCreated datePublished" datetime="2021-05-18T15:48:41+08:00">2021-05-18</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-07-30 14:34:58" itemprop="dateModified" datetime="2021-07-30T14:34:58+08:00">2021-07-30</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>3 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">本章简要概括一下hashMap的底层实现原理。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="HashMap"><a href="#HashMap" class="headerlink" title="HashMap"></a>HashMap</h1><p>hashMap不管是在实际使用中还是面试中都是高频出现的</p>
+<p>在jdk1.7版本及之前，hashMap采用数组加链表的方法，首先来说下为什么采用数组加链表的方式，put数据时hashmap会通过hash算法得到一个类似存储地址，也差不多就是数组的下标，但是如果多个数据通过hash算法之后得到了同一个地址就会产生冲突，我们称之为hash冲突，这个时候我们会采用头插法避免hash冲突，但是这样的话，查询的时候如果没有链表的话，只要找到下标就可以根据映射找到数据，如果有链表还要遍历才能找到，效率变低。</p>
+<hr>
+<p>[TOC]</p>
+<h2 id="hashMap结构图"><a href="#hashMap结构图" class="headerlink" title="hashMap结构图"></a>hashMap结构图</h2><h3 id="1-7-hashmap"><a href="#1-7-hashmap" class="headerlink" title="1.7 hashmap"></a>1.7 hashmap</h3><p><img src="/2021/05/18/HashMap/26075772-5c3393ae04229968.png" alt="hashMap结构图"></p>
+<blockquote>
+<p>简单说下扩容机制：</p>
+</blockquote>
+<blockquote>
+<p>1.7及之前 hashmap的初始化空间为16，负载因子是0.75（为什么是0.75呢？总结：负载因子是0.75的时候，空间利用率比较高，而且避免了相当多的Hash冲突，使得底层的链表或者是红黑树的高度比较低，提升了空间效率）<br>阈值=初始空间*0.75=12<br>当hashmap的size大于等于阈值，并且产生hash冲突的时候，hashmap才会扩容扩容空间固定为之前的两倍<br>（为了保证新老数组索引一致，减少位置调换）</p>
+</blockquote>
+<h3 id="1-8之后hashmap进行了优化，首先就是引入了红黑树"><a href="#1-8之后hashmap进行了优化，首先就是引入了红黑树" class="headerlink" title="1.8之后hashmap进行了优化，首先就是引入了红黑树"></a>1.8之后hashmap进行了优化，首先就是引入了红黑树</h3><p><img src="/2021/05/18/HashMap/26075772-7aca994cc5278eb9.png" alt="1.8 hashMap结构图"></p>
+<blockquote>
+<p>jdk1.8及之后引入了红黑树，使其查找的更快速，也由1.7之前的头插法改为了尾插法，为什么用尾插法？</p>
+</blockquote>
+<blockquote>
+<p>一：由于resize的赋值方式，扩容之后链表上的元素会反过来,这样的话就会形成链表，进而可能造成死循环。</p>
+</blockquote>
+<p><img src="/2021/05/18/HashMap/26075772-a33260a12b0c088a.png" alt="1.8 hashMap结构图"></p>
+<blockquote>
+<p>同样条件jdk1.8hashmap采用尾插法在扩容之后链表顺序不变，节点不变。</p>
+</blockquote>
+<blockquote>
+<p>二、设计思想，认为最后put进去的值可能就是最近需要取出的；</p>
+</blockquote>
+<h2 id="hashMap源码分析"><a href="#hashMap源码分析" class="headerlink" title="hashMap源码分析"></a>hashMap源码分析</h2><h3 id="1-7源码分析-put方法"><a href="#1-7源码分析-put方法" class="headerlink" title="1.7源码分析-put方法"></a>1.7源码分析-put方法</h3><p><img src="/2021/05/18/HashMap/26075772-858205447441c834.png" alt="1.7源码分析-put方法"></p>
+<h3 id="1-7源码分析-addEntry方法"><a href="#1-7源码分析-addEntry方法" class="headerlink" title="1.7源码分析-addEntry方法"></a>1.7源码分析-addEntry方法</h3><p><img src="/2021/05/18/HashMap/26075772-23c167e3ee98a84e.png" alt="addEntry方法"></p>
+<h3 id="1-7源码分析-resize方法"><a href="#1-7源码分析-resize方法" class="headerlink" title="1.7源码分析-resize方法"></a>1.7源码分析-resize方法</h3><p><img src="/2021/05/18/HashMap/26075772-24827bc6e9995372.png" alt="resize方法"></p>
+<h3 id="1-8源码分析-put方法"><a href="#1-8源码分析-put方法" class="headerlink" title="1.8源码分析-put方法"></a>1.8源码分析-put方法</h3><p><img src="/2021/05/18/HashMap/26075772-858205447441c834.png" alt="1.8源码分析-put方法"></p>
+<h3 id="1-8源码分析-resize方法"><a href="#1-8源码分析-resize方法" class="headerlink" title="1.8源码分析-resize方法"></a>1.8源码分析-resize方法</h3><blockquote>
+<p>—————————————————–开始—————————————————–<br>   final Node&lt;K,V&gt;[] resize() {</p>
+</blockquote>
+<blockquote>
+<pre><code>   Node&lt;K,V&gt;[] oldTab = table;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   //之前的空间为null则替换为0
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   int oldCap = (oldTab == null) ? 0 : oldTab.length;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   int oldThr = threshold;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   int newCap, newThr = 0;
+</code></pre>
+</blockquote>
+<blockquote>
+<p>   //之前空间大于0，如果之前空间大于最大容器空间则不扩容；反之，当前空间大于初始化空间则扩容</p>
+</blockquote>
+<blockquote>
+<pre><code>   if (oldCap &gt; 0) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       if (oldCap &gt;= MAXIMUM_CAPACITY) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           threshold = Integer.MAX_VALUE;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           return oldTab;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       else if ((newCap = oldCap &lt;&lt; 1) &lt; MAXIMUM_CAPACITY &amp;&amp;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           oldCap &gt;= DEFAULT_INITIAL_CAPACITY)                     
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           newThr = oldThr &lt;&lt; 1; // double threshold
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       //自定义初始空间则返回自定义空间
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       else if (oldThr &gt; 0) // initial capacity was placed in threshold
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       newCap = oldThr;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       //否则使用默认分配空间
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       else &#123;              // zero initial threshold signifies using defaults
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           newCap = DEFAULT_INITIAL_CAPACITY;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<p>   //阈值为0，判断空间容量是否超过最大空间，不超过的话则为新的空间容量*负载因子，不然赋值为最大容量</p>
+</blockquote>
+<blockquote>
+<pre><code>   if (newThr == 0) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       float ft = (float)newCap * loadFactor;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (float)MAXIMUM_CAPACITY ?
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>         (int)ft : Integer.MAX_VALUE);
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   threshold = newThr;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   @SuppressWarnings(&#123;&quot;rawtypes&quot;,&quot;unchecked&quot;&#125;)
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])new Node[newCap];
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   table = newTab;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   //扩容
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   if (oldTab != null) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       for (int j = 0; j &lt; oldCap; ++j) &#123;                               
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           Node&lt;K,V&gt; e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           if ((e = oldTab[j]) != null) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>               oldTab[j] = null;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   if (e.next == null)                                     
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       newTab[e.hash &amp; (newCap - 1)] = e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   else if (e instanceof TreeNode)
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       ((TreeNode&lt;K,V&gt;)e).split(this, newTab, j, oldCap);
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   else &#123; // preserve order
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       //下个节点为null，者进行尾插法插入
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       Node&lt;K,V&gt; loHead = null, loTail = null;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       Node&lt;K,V&gt; hiHead = null, hiTail = null;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       Node&lt;K,V&gt; next;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>               do &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   next = e.next;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   if ((e.hash &amp; oldCap) == 0) &#123;                     
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       if (loTail == null)                           
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           loHead = e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       else
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           loTail.next = e;                         
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           loTail = e;                                   
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   else &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       if (hiTail == null)
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           hiHead = e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       else
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           hiTail.next = e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                           hiTail = e;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>               &#125; while ((e = next) != null);
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   if (loTail != null) &#123;                                 
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       loTail.next = null;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       newTab[j] = loHead;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   if (hiTail != null) &#123;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       hiTail.next = null;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                       newTab[j + oldCap] = hiHead;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>                   &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>               &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>           &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>       &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   &#125;
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>   return newTab;
+</code></pre>
+</blockquote>
+<blockquote>
+<p>   }</p>
+</blockquote>
+<blockquote>
+<p>—————————————————–结束—————————————————–</p>
+</blockquote>
+<blockquote>
+<p>另外：在多线程环境下不管是hashmap1.7或之后都是不安全的的，官网也建议使用concurrentHashMap。</p>
+</blockquote>
+<h2 id="concurrentHashMap简单了解"><a href="#concurrentHashMap简单了解" class="headerlink" title="concurrentHashMap简单了解"></a>concurrentHashMap简单了解</h2><blockquote>
+<p>jdk1.7下的concurrentHashMap：</p>
+</blockquote>
+<p><img src="/2021/05/18/HashMap/26075772-dca3ff78ca1531ce.png" alt="1.7下的concurrentHashMap"></p>
+<blockquote>
+<p>1.7版本的concurrentHashMap采用的是类似分段锁的方式，每一个segment里面单独存放entity节点，各个粒子相互不影响。</p>
+</blockquote>
+<blockquote>
+<p>1.8版本的concurrentHashMap和hashMap基本一致，保证线程安全，放弃了之前的segment，引入了synchronized同步锁的方式。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="/atom.xml">
+          <span class="icon">
+            <i class="fa fa-rss"></i>
+          </span>
+
+          <span class="label">RSS</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.jianshu.com/u/d0195763fd5f">
+          <span class="icon">
+            <i class="fa fa-book"></i>
+          </span>
+
+          <span class="label">简书</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/04/08/synchronized/" rel="prev" title="synchronized">
+                  <i class="fa fa-chevron-left"></i> synchronized
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+  
+  
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81MzIyMy8yOTY5OA=="></div><script src="/js/comments.js"></script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">cool</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">6k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">5 分钟</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+<script>
+NexT.utils.loadComments('#lv-container', () => {
+  window.livereOptions = {
+    refer: "2021/05/18/HashMap/"
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>
